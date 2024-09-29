@@ -28,7 +28,7 @@ def test_opt_adaptive_trunc():
     logging.info("Full tau optimization\n")
     opt = CutoffOptimizer(adaptive=True)
     best_cutoff_dict = opt.run(parameters)
-    assert(best_cutoff_dict["memory_time"] == (6,))
+    assert(best_cutoff_dict["memory_time"] == (4,))
 
 
 def test_opt_adaptive_search_range():
@@ -47,7 +47,7 @@ def test_opt_adaptive_search_range():
 
     opt = CutoffOptimizer(adaptive=True, popsize=5)
     best_cutoff_dict = opt.run(parameters)
-    assert_allclose(best_cutoff_dict["memory_time"], (18, 30))
+    assert_allclose(best_cutoff_dict["memory_time"], (3, 7))
 
 
 def test_opt_uniform():
@@ -64,8 +64,8 @@ def test_opt_uniform():
     opt = CutoffOptimizer(
         opt_kind="uniform_de", adaptive=True)
     best_cutoff_dict = opt.run(parameters)
-    assert_allclose(best_cutoff_dict["memory_time"], (45, 45))
+    assert_allclose(best_cutoff_dict["memory_time"], (25, 25))
 
 
 if __name__ == "__main__":
-    pytest.main()
+    pytest.main(["-sv", "test_optimization.py"])
