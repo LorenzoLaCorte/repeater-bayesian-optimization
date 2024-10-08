@@ -1,12 +1,18 @@
+import ast
 from copy import deepcopy
+import glob
 import logging
+import re
+from typing import Dict, List, Tuple
 import warnings
 
+import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.gridspec as gridspec
 from scipy.optimize import curve_fit
 
+from gp_utils import load_config
 from optimize_cutoff import (
     optimization_tau_wrapper,
     CutoffOptimizer,
@@ -210,8 +216,8 @@ def cutoff_vs_coherence_plot(ID):
     fig.show()
     input()
 
-if __name__ == "__main__":
 
+def compare_cut_off():
     plt.rcParams.update(
         {"font.size": 9,
         # "font.family": "Arial",
@@ -325,3 +331,90 @@ if __name__ == "__main__":
     fig.savefig("figures/computation_time.pdf")
     fig.savefig("figures/computation_time.png")
  
+
+def parse_line(line: str) -> Tuple[Tuple[str, ...], float]:
+    pattern = r'\s*"\(([^)]+)\)": ([\d\.e+-]+),'
+    match = re.match(pattern, line)
+    if match:
+        tuple_str, value_str = match.groups()
+        tuple_value = ast.literal_eval(f"({tuple_str})")
+        value = float(value_str)
+        return tuple_value, value
+    else:
+        raise ValueError("Line does not match the expected format")
+
+def scrape_protocols_skr(file_path: str) -> Dict[str, float]:
+    with open(file_path, 'r') as file:
+        content: str = file.read()
+    lines: List[str] = content.split("\n")
+    protocols_skr: Dict[str, float] = {}
+    for line in lines:
+        try:
+            protocol, skr = parse_line(line)
+            protocols_skr[protocol] = skr
+        except ValueError:
+            continue
+    return protocols_skr
+
+def distillation_utility() -> None:
+    t_coh: int = 1400000
+    p_gen: float = 0.00092
+    p_swap: float = 0.85
+    nodes: int = 5
+    max_dists: int = 3
+    folder: str = "results_asymmetric"
+    w0_values: List[float] = [0.95, 0.96, 0.97, 0.98]  # Example w0 values, adjust as needed
+    
+    optimal_skr = []
+    optimal_swap_skr = []
+
+    for w0 in w0_values:
+        pattern: str = f"{folder}/results_gp_tcoh{t_coh}_pgen{p_gen}_pswap{p_swap}_w0{w0}_nodes{nodes}_maxdists{max_dists}_*/output.txt"
+        files: List[str] = glob.glob(pattern)
+        
+        overall_max_protocol: str = None
+        overall_max_skr: float = float('-inf')
+        overall_max_swap_protocol: str = None
+        overall_max_swap_skr: float = float('-inf')
+
+        for file_path in files:
+            protocols_skr: Dict[str, float] = scrape_protocols_skr(file_path)
+            max_protocol_all, max_skr_all = max(protocols_skr.items(), key=lambda item: item[1], default=(None, None))
+
+            only_swap_protocols = {protocol: skr for protocol, skr in protocols_skr.items() if len(protocol) == nodes-2}
+            max_protocol_swap, max_skr_swap = max(only_swap_protocols.items(), key=lambda item: item[1], default=(None, None))
+
+            if max_skr_all is not None and max_skr_all > overall_max_skr:
+                overall_max_protocol, overall_max_skr = max_protocol_all, max_skr_all
+
+            if max_skr_swap is not None and max_skr_swap > overall_max_swap_skr:
+                overall_max_swap_protocol, overall_max_swap_skr = max_protocol_swap, max_skr_swap
+
+        optimal_skr.append(overall_max_skr)
+        optimal_swap_skr.append(overall_max_swap_skr)
+
+        print(f"Maximum SKR for w0={w0}: {overall_max_skr} for protocol {overall_max_protocol}")
+        print(f"Maximum SKR for w0={w0} with only swap: {overall_max_swap_skr} for protocol {overall_max_swap_protocol}")
+
+
+    sns.set_palette("Dark2")
+    config = load_config('config.json')
+    
+    plt.figure(figsize=(config['figsize_paper']['linewidth']*2, config['figsize_paper']['linewidth']*2/1.5), dpi=config['dpi'])
+
+    plt.plot(w0_values, optimal_skr, marker='*', linestyle='None', label='Optimal protocol')
+    plt.plot(w0_values, optimal_swap_skr, marker='+', linestyle='None', label='Optimal protocol without distillation')
+
+    for i, (x, y) in enumerate(zip(w0_values, optimal_skr)):
+        plt.annotate(f"({chr(97 + i)})", (x, y), textcoords="offset points", xytext=(0,10), ha='center')
+
+    plt.xlabel('$w_0$')
+    plt.ylabel('Secret Key Rate')
+    
+    plt.legend(frameon=True)
+
+    plt.tight_layout()
+    plt.savefig("figures/distillation_utility.pdf")
+
+if __name__ == "__main__":
+    distillation_utility()

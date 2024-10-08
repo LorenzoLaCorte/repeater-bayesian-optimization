@@ -4,8 +4,8 @@ SCRIPT="gp_asymmetric.py"
 PY_ALIAS="python3.10"
 
 # Define what simulation you want to run {True, False}
-GP_HOMOGENEOUS=False
-GP_HETEROGENEOUS=True
+GP_HOMOGENEOUS=True
+GP_HETEROGENEOUS=False
 
 # Define the general result directory
 GENERAL_RESULT_DIR="./results_asymmetric"
@@ -13,10 +13,10 @@ GENERAL_RESULT_DIR="./results_asymmetric"
 # Define parameters as tuples of t_coh, p_gen, p_swap, w0, nodes, max_dists
 PARAMETER_SETS=(
     # ----------------------------------------- new
-    "1400000 0.092     0.85 0.98  5  2"
-    "140000  0.092     0.85 0.98  5  2"
-    "14000   0.092     0.85 0.98  5  2"
-    "1400    0.092     0.85 0.98  5  2"
+    "1400000 0.00092   0.85 0.96  5  2"
+    "1400000 0.00092   0.85 0.97  5  2"
+    "1400000 0.00092   0.85 0.98  5  2"
+    "1400000 0.00092   0.85 0.99  5  2"
 
     # ----------------------------------------- validation (done)
     # "1400000 0.00092     0.85 0.952 5  1"

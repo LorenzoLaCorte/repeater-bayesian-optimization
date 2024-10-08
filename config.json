@@ -3,6 +3,10 @@
         "width": 9,
         "height": 4
     },
+    "figsize_paper": {
+        "textwidth": 5.16,
+        "linewidth": 2.52
+    },
     "figsize_skopt_2D": {
         "width": 12,
         "height": 6
