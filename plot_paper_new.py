@@ -6,6 +6,7 @@ import re
 from typing import Dict, List, Tuple
 import warnings
 
+from matplotlib.ticker import ScalarFormatter
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
@@ -362,7 +363,7 @@ def distillation_utility() -> None:
     p_swap: float = 0.85
     nodes: int = 5
     max_dists: int = 3
-    folder: str = "results_asymmetric"
+    folder: str = "results/asymmetric/varying_w0"
     w0_values: List[float] = [0.95, 0.96, 0.97, 0.98]  # Example w0 values, adjust as needed
     
     optimal_skr = []
@@ -408,13 +409,15 @@ def distillation_utility() -> None:
     for i, (x, y) in enumerate(zip(w0_values, optimal_skr)):
         plt.annotate(f"({chr(97 + i)})", (x, y), textcoords="offset points", xytext=(0,10), ha='center')
 
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((-3, 4))
+    plt.gca().yaxis.set_major_formatter(formatter)
     plt.xlabel('$w_0$')
     plt.ylabel('Secret Key Rate')
-    
     plt.legend(frameon=True)
-
     plt.tight_layout()
-    plt.savefig("figures/distillation_utility.pdf")
+    plt.savefig("figures/distillation_utility.pdf", bbox_inches='tight')
 
 if __name__ == "__main__":
     distillation_utility()
